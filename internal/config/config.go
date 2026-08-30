@@ -647,8 +647,9 @@ type Tools struct {
 }
 
 type ToolLs struct {
-	MaxDepth *int `json:"max_depth,omitempty" jsonschema:"description=Maximum depth for the ls tool,default=0,example=10"`
-	MaxItems *int `json:"max_items,omitempty" jsonschema:"description=Maximum number of items to return for the ls tool,default=1000,example=100"`
+	MaxDepth       *int  `json:"max_depth,omitempty" jsonschema:"description=Maximum depth for the ls tool,default=0,example=10"`
+	MaxItems       *int  `json:"max_items,omitempty" jsonschema:"description=Maximum number of items to return for the ls tool,default=1000,example=100"`
+	FollowSymlinks *bool `json:"follow_symlinks,omitempty" jsonschema:"description=Whether to follow symlinks"`
 }
 
 // Limits returns the user-defined max-depth and max-items, or their defaults.

@@ -405,7 +405,7 @@ func (c *Completions) Render() string {
 }
 
 func loadFiles(depth, limit int) []FileCompletionValue {
-	files, _, _ := fsext.ListDirectory(".", nil, depth, limit)
+	files, _, _ := fsext.ListDirectory(".", nil, depth, limit, true)
 	slices.Sort(files)
 	result := make([]FileCompletionValue, 0, len(files))
 	for _, file := range files {

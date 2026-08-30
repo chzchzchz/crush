@@ -893,6 +893,11 @@
           "examples": [
             100
           ]
+        },
+        "follow_symlinks": {
+          "type": "boolean",
+          "description": "Whether to follow symlinks",
+          "default": true
         }
       },
       "additionalProperties": false,

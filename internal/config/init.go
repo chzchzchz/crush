@@ -93,7 +93,7 @@ func contextPathsExist(dir string) (bool, error) {
 
 // dirHasNoVisibleFiles returns true if the directory has no files/dirs after applying ignore rules.
 func dirHasNoVisibleFiles(dir string) (bool, error) {
-	files, _, err := fsext.ListDirectory(dir, nil, 1, 1)
+	files, _, err := fsext.ListDirectory(dir, nil, 1, 1, true)
 	if err != nil {
 		return false, err
 	}

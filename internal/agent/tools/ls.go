@@ -18,15 +18,17 @@ import (
 )
 
 type LSParams struct {
-	Path   string   `json:"path,omitempty" description:"The path to the directory to list (defaults to current working directory)"`
-	Ignore []string `json:"ignore,omitempty" description:"List of glob patterns to ignore"`
-	Depth  int      `json:"depth,omitempty" description:"The maximum depth to traverse"`
+	Path           string   `json:"path,omitempty" description:"The path to the directory to list (defaults to current working directory)"`
+	Ignore         []string `json:"ignore,omitempty" description:"List of glob patterns to ignore"`
+	Depth          int      `json:"depth,omitempty" description:"The maximum depth to traverse"`
+	FollowSymlinks *bool    `json:"follow_symlinks,omitempty" description:"Whether to follow symlinks"`
 }
 
 type LSPermissionsParams struct {
-	Path   string   `json:"path"`
-	Ignore []string `json:"ignore"`
-	Depth  int      `json:"depth"`
+	Path           string   `json:"path"`
+	Ignore         []string `json:"ignore"`
+	Depth          int      `json:"depth"`
+	FollowSymlinks *bool    `json:"follow_symlinks"`
 }
 
 type NodeType string
@@ -142,11 +144,19 @@ func ListDirectoryTree(searchPath string, params LSParams, lsConfig config.ToolL
 
 	depth, limit := lsConfig.Limits()
 	maxFiles := cmp.Or(limit, maxLSFiles)
+	followSymlinks := true
+	if params.FollowSymlinks != nil {
+		followSymlinks = *params.FollowSymlinks
+	} else if lsConfig.FollowSymlinks != nil {
+		followSymlinks = *lsConfig.FollowSymlinks
+	}
+
 	files, truncated, err := fsext.ListDirectory(
 		searchPath,
 		params.Ignore,
 		cmp.Or(params.Depth, depth),
 		maxFiles,
+		followSymlinks,
 	)
 	if err != nil {
 		return "", LSResponseMetadata{}, fmt.Errorf("error listing directory: %w", err)

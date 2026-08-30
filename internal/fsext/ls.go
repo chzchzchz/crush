@@ -268,14 +268,14 @@ func (dl *directoryLister) shouldIgnore(path string, ignorePatterns []string, is
 }
 
 // ListDirectory lists files and directories in the specified path.
-func ListDirectory(initialPath string, ignorePatterns []string, depth, limit int) ([]string, bool, error) {
+func ListDirectory(initialPath string, ignorePatterns []string, depth, limit int, followSymlinks bool) ([]string, bool, error) {
 	found := csync.NewSlice[string]()
 	dl := NewDirectoryLister(initialPath)
 
-	slog.Debug("Listing directory", "path", initialPath, "depth", depth, "limit", limit, "ignorePatterns", ignorePatterns)
+	slog.Debug("Listing directory", "path", initialPath, "depth", depth, "limit", limit, "ignorePatterns", ignorePatterns, "followSymlinks", followSymlinks)
 
 	conf := fastwalk.Config{
-		Follow:   true,
+		Follow:   followSymlinks,
 		ToSlash:  fastwalk.DefaultToSlash(),
 		Sort:     fastwalk.SortDirsFirst,
 		MaxDepth: depth,

@@ -28,7 +28,7 @@ func TestListDirectory(t *testing.T) {
 	}
 
 	t.Run("no limit", func(t *testing.T) {
-		files, truncated, err := ListDirectory(tmp, nil, -1, -1)
+		files, truncated, err := ListDirectory(tmp, nil, -1, -1, true)
 		require.NoError(t, err)
 		require.False(t, truncated)
 		// The .gitignore has ".*" pattern which ignores hidden files anywhere
@@ -41,10 +41,29 @@ func TestListDirectory(t *testing.T) {
 		}, relPaths(t, files, tmp))
 	})
 	t.Run("limit", func(t *testing.T) {
-		files, truncated, err := ListDirectory(tmp, nil, -1, 2)
+		files, truncated, err := ListDirectory(tmp, nil, -1, 2, true)
 		require.NoError(t, err)
 		require.True(t, truncated)
 		require.Len(t, files, 2)
+	})
+	t.Run("follow symlinks false", func(t *testing.T) {
+		targetDir := t.TempDir()
+		require.NoError(t, os.MkdirAll(targetDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(targetDir, "secret.txt"), []byte("secret"), 0o644))
+
+		linkPath := filepath.Join(tmp, "linkdir")
+		require.NoError(t, os.Symlink(targetDir, linkPath))
+
+		files, _, err := ListDirectory(tmp, nil, -1, -1, false)
+		require.NoError(t, err)
+		// The symlink directory should appear but its contents should not be traversed.
+		require.Len(t, files, 4)
+		require.ElementsMatch(t, []string{
+			"regular.txt",
+			"subdir",
+			"subdir/file.go",
+			"linkdir",
+		}, relPaths(t, files, tmp))
 	})
 }
 
