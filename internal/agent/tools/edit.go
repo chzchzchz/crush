@@ -180,6 +180,7 @@ func createNewFile(edit editContext, filePath, content string, call fantasy.Tool
 	}
 
 	edit.filetracker.RecordRead(edit.ctx, sessionID, filePath)
+	edit.filetracker.RecordWrite(edit.ctx, sessionID, filePath)
 
 	return fantasy.WithResponseMetadata(
 		fantasy.NewTextResponse("File created: "+filePath),
@@ -266,6 +267,7 @@ func commitFileChange(edit editContext, sessionID, filePath, oldContent, newCont
 	}
 
 	edit.filetracker.RecordRead(edit.ctx, sessionID, filePath)
+	edit.filetracker.RecordWrite(edit.ctx, sessionID, filePath)
 	return nil
 }
 
@@ -292,8 +294,13 @@ func loadExistingFile(edit editContext, filePath, sessionError string) (sessionI
 		return "", "", false, fantasy.NewTextErrorResponse("you must read the file before editing it. Use the View tool first"), nil
 	}
 
+	lastWrite := edit.filetracker.LastWriteTime(edit.ctx, sessionID, filePath)
 	modTime := fileInfo.ModTime().Truncate(time.Second)
-	if modTime.After(lastRead) {
+	lastModified := lastRead
+	if !lastWrite.IsZero() && lastWrite.After(lastModified) {
+		lastModified = lastWrite
+	}
+	if modTime.After(lastModified) {
 		return "", "", false, fantasy.NewTextErrorResponse(
 			fmt.Sprintf(
 				"file %s has been modified since it was last read (mod time: %s, last read: %s)",

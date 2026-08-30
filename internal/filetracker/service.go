@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/crush/internal/db"
 )
 
-// Service defines the interface for tracking file reads in sessions.
+// Service defines the interface for tracking file reads and writes in sessions.
 type Service interface {
 	// RecordRead records when a file was read.
 	RecordRead(ctx context.Context, sessionID, path string)
@@ -23,6 +23,16 @@ type Service interface {
 
 	// ListReadFiles returns the paths of all files read in a session.
 	ListReadFiles(ctx context.Context, sessionID string) ([]string, error)
+
+	// RecordWrite records when a file was written.
+	RecordWrite(ctx context.Context, sessionID, path string)
+
+	// LastWriteTime returns when a file was last written.
+	// Returns zero time if never written.
+	LastWriteTime(ctx context.Context, sessionID, path string) time.Time
+
+	// ListWriteFiles returns the paths of all files written in a session.
+	ListWriteFiles(ctx context.Context, sessionID string) ([]string, error)
 }
 
 type service struct {
@@ -88,6 +98,49 @@ func (s *service) ListReadFiles(ctx context.Context, sessionID string) ([]string
 	paths := make([]string, 0, len(readFiles))
 	for _, rf := range readFiles {
 		paths = append(paths, filepath.Join(basepath, rf.Path))
+	}
+	return paths, nil
+}
+
+// RecordWrite records when a file was written.
+func (s *service) RecordWrite(ctx context.Context, sessionID, path string) {
+	if err := s.q.RecordFileWrite(ctx, db.RecordFileWriteParams{
+		SessionID: sessionID,
+		Path:      relpath(path),
+	}); err != nil {
+		slog.Error("Error recording file write", "error", err, "file", path)
+	}
+}
+
+// LastWriteTime returns when a file was last written.
+// Returns zero time if never written.
+func (s *service) LastWriteTime(ctx context.Context, sessionID, path string) time.Time {
+	writeFile, err := s.q.GetFileWrite(ctx, db.GetFileWriteParams{
+		SessionID: sessionID,
+		Path:      relpath(path),
+	})
+	if err != nil {
+		return time.Time{}
+	}
+
+	return time.Unix(writeFile.WrittenAt, 0)
+}
+
+// ListWriteFiles returns the paths of all files written in a session.
+func (s *service) ListWriteFiles(ctx context.Context, sessionID string) ([]string, error) {
+	writeFiles, err := s.q.ListSessionWriteFiles(ctx, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("listing write files: %w", err)
+	}
+
+	basepath, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("getting working directory: %w", err)
+	}
+
+	paths := make([]string, 0, len(writeFiles))
+	for _, wf := range writeFiles {
+		paths = append(paths, filepath.Join(basepath, wf.Path))
 	}
 	return paths, nil
 }

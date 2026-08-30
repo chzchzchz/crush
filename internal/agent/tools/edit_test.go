@@ -29,6 +29,16 @@ func (m *mockEditFileTracker) ListReadFiles(ctx context.Context, sessionID strin
 	return m.reads, nil
 }
 
+func (m *mockEditFileTracker) RecordWrite(ctx context.Context, sessionID, path string) {}
+
+func (m *mockEditFileTracker) LastWriteTime(ctx context.Context, sessionID, path string) time.Time {
+	return time.Time{}
+}
+
+func (m *mockEditFileTracker) ListWriteFiles(ctx context.Context, sessionID string) ([]string, error) {
+	return nil, nil
+}
+
 func TestReplaceContentPreservesCRLFAndMetadata(t *testing.T) {
 	t.Parallel()
 

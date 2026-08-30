@@ -73,7 +73,12 @@ func NewWriteTool(
 
 				modTime := fileInfo.ModTime().Truncate(time.Second)
 				lastRead := filetracker.LastReadTime(ctx, sessionID, filePath)
-				if modTime.After(lastRead) {
+				lastWrite := filetracker.LastWriteTime(ctx, sessionID, filePath)
+				lastModified := lastRead
+				if !lastWrite.IsZero() && lastWrite.After(lastModified) {
+					lastModified = lastWrite
+				}
+				if modTime.After(lastModified) {
 					return fantasy.NewTextErrorResponse(fmt.Sprintf("File %s has been modified since it was last read.\nLast modification: %s\nLast read: %s\n\nPlease read the file again before modifying it.",
 						filePath, modTime.Format(time.RFC3339), lastRead.Format(time.RFC3339))), nil
 				}
@@ -162,6 +167,7 @@ func NewWriteTool(
 			}
 
 			filetracker.RecordRead(ctx, sessionID, filePath)
+			filetracker.RecordWrite(ctx, sessionID, filePath)
 
 			notifyLSPs(ctx, lspManager, params.FilePath)
 
