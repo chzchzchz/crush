@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"charm.land/fantasy"
 	"github.com/charmbracelet/crush/internal/config"
 	"github.com/charmbracelet/crush/internal/fsext"
+	"github.com/charmbracelet/crush/internal/filetracker"
 	"github.com/charmbracelet/crush/internal/permission"
 	"github.com/charmbracelet/crush/internal/shell"
 )
@@ -54,6 +56,18 @@ const (
 	MaxOutputLength            = 30000
 	BashNoOutput               = "no output"
 )
+
+// sedRangePattern matches sed -n 'start,endp' filepath patterns.
+var sedRangePattern = regexp.MustCompile(`^sed\s+-n\s+'(\d+),(\d+)p'\s+(\S+)$`)
+
+// sedChainedPattern matches cd <dir> && sed -n 'start,endp' filepath patterns.
+var sedChainedPattern = regexp.MustCompile(`cd\s+(\S+)\s+&&\s+sed\s+-n\s+'(\d+),(\d+)p'\s+(\S+)`)
+
+// writeRedirectPattern matches write commands with redirect: cmd > file or cmd >> file (possibly with heredoc suffix).
+var writeRedirectPattern = regexp.MustCompile(`^(cat|tee|echo|printf)\s+(>>|>)\s+(\S+)(\s+<<\S*)?$`)
+
+// chainedWritePattern matches cd <dir> && cmd > file write commands (possibly with heredoc suffix).
+var chainedWritePattern = regexp.MustCompile(`^cd\s+(\S+)\s+&&\s+(cat|tee|echo|printf)\s+(>>|>)\s+(\S+)(\s+<<\S*)?$`)
 
 //go:embed bash.md.tpl
 var bashDescriptionTmpl []byte
@@ -194,7 +208,7 @@ func blockFuncs() []shell.BlockFunc {
 	}
 }
 
-func NewBashTool(permissions permission.Service, workingDir string, attribution *config.Attribution, modelID string) fantasy.AgentTool {
+func NewBashTool(permissions permission.Service, workingDir string, attribution *config.Attribution, modelID string, filetracker filetracker.Service) fantasy.AgentTool {
 	return fantasy.NewAgentTool(
 		BashToolName,
 		string(bashDescription(attribution, modelID)),
@@ -351,6 +365,24 @@ func NewBashTool(permissions permission.Service, workingDir string, attribution 
 				// Remove from background manager since we're returning directly
 				// Don't call Kill() as it cancels the context and corrupts the exit code
 				bgManager.Remove(bgShell.ID)
+
+				// Track file reads from sed range commands: sed -n 'start,endp' filepath
+				if matches := sedRangePattern.FindStringSubmatch(params.Command); matches != nil {
+					filetracker.RecordRead(ctx, sessionID, matches[3])
+				} else if matches := sedChainedPattern.FindStringSubmatch(params.Command); matches != nil {
+					filePath := filepath.Join(matches[1], matches[4])
+					filetracker.RecordRead(ctx, sessionID, filePath)
+				}
+
+				// Track file writes from redirect commands: cmd > file or cmd >> file (possibly with heredoc suffix)
+				if matches := chainedWritePattern.FindStringSubmatch(params.Command); matches != nil {
+					filePath := filepath.Join(matches[1], matches[4])
+					filetracker.RecordWrite(ctx, sessionID, filePath)
+				}
+				// Track file writes from standalone redirect commands: cmd > file or cmd >> file (possibly with heredoc suffix)
+				if matches := writeRedirectPattern.FindStringSubmatch(params.Command); matches != nil {
+					filetracker.RecordWrite(ctx, sessionID, matches[3])
+				}
 
 				interrupted := shell.IsInterrupt(execErr)
 				exitCode := shell.ExitCode(execErr)
