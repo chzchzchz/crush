@@ -876,6 +876,16 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "ToolRead": {
+      "properties": {
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout for the read tool call"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "ToolLs": {
       "properties": {
         "max_depth": {
@@ -913,6 +923,9 @@
         },
         "glob": {
           "$ref": "#/$defs/ToolGlob"
+        },
+        "read": {
+          "$ref": "#/$defs/ToolRead"
         }
       },
       "additionalProperties": false,

@@ -220,6 +220,10 @@ func NewToolMessageItem(
 	switch toolCall.Name {
 	case tools.BashToolName:
 		item = NewBashToolMessageItem(sty, toolCall, result, canceled, workingDir)
+	case tools.ExecuteToolName:
+		item = NewBashToolMessageItem(sty, toolCall, result, canceled, workingDir)
+	case tools.ReadToolName:
+		item = NewViewToolMessageItem(sty, toolCall, result, canceled)
 	case tools.JobOutputToolName:
 		item = NewJobOutputToolMessageItem(sty, toolCall, result, canceled)
 	case tools.JobKillToolName:

@@ -641,9 +641,11 @@ type Agent struct {
 }
 
 type Tools struct {
-	Ls   ToolLs   `json:"ls,omitzero"`
-	Grep ToolGrep `json:"grep,omitzero"`
-	Glob ToolGlob `json:"glob,omitzero"`
+	Ls      ToolLs   `json:"ls,omitzero"`
+	Grep    ToolGrep `json:"grep,omitzero"`
+	Glob    ToolGlob `json:"glob,omitzero"`
+	Read    ToolRead `json:"read,omitzero"`
+	Execute ToolExecute `json:"execute,omitzero"`
 }
 
 type ToolLs struct {
@@ -666,6 +668,10 @@ func (t ToolGrep) GetTimeout() time.Duration {
 	return ptrValOr(t.Timeout, 5*time.Second)
 }
 
+type ToolRead struct {
+	Timeout *time.Duration `json:"timeout,omitempty" jsonschema:"description=Timeout for the read tool call,default=5s,example=10s"`
+}
+
 type ToolGlob struct {
 	Timeout *time.Duration `json:"timeout,omitempty" jsonschema:"description=Timeout for the glob tool call,default=30s,example=10s"`
 }
@@ -673,6 +679,10 @@ type ToolGlob struct {
 // GetTimeout returns the user-defined timeout or the default.
 func (t ToolGlob) GetTimeout() time.Duration {
 	return ptrValOr(t.Timeout, 30*time.Second)
+}
+
+type ToolExecute struct {
+	Timeout *time.Duration `json:"timeout,omitempty" jsonschema:"description=Timeout for the execute tool call,default=5s,example=10s"`
 }
 
 // HookConfig defines a user-configured shell command that fires on a hook

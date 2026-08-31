@@ -498,6 +498,14 @@ func (p *Permissions) renderHeader(contentWidth int) string {
 		if params, ok := p.permission.Params.(tools.LSPermissionsParams); ok {
 			lines = append(lines, p.renderKeyValue("Directory", fsext.PrettyPath(params.Path), contentWidth))
 		}
+	case tools.ExecuteToolName:
+		if params, ok := p.permission.Params.(tools.ExecuteParams); ok {
+			lines = append(lines, p.renderKeyValue("Command", params.Command, contentWidth))
+		}
+	case tools.ReadToolName:
+		if params, ok := p.permission.Params.(tools.ReadPermissionsParams); ok {
+			lines = append(lines, p.renderKeyValue("File", params.FilePath, contentWidth))
+		}
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
@@ -541,6 +549,8 @@ func (p *Permissions) renderContent(width int) string {
 	switch p.permission.ToolName {
 	case tools.BashToolName:
 		return p.renderBashContent(width)
+	case tools.ExecuteToolName:
+		return p.renderExecuteContent(width)
 	case tools.EditToolName:
 		return p.renderEditContent(width)
 	case tools.WriteToolName:
@@ -557,6 +567,8 @@ func (p *Permissions) renderContent(width int) string {
 		return p.renderAgenticFetchContent(width)
 	case tools.ViewToolName:
 		return p.renderViewContent(width)
+	case tools.ReadToolName:
+		return p.renderReadContent(width)
 	case tools.LSToolName:
 		return p.renderLSContent(width)
 	default:
@@ -571,6 +583,34 @@ func (p *Permissions) renderBashContent(width int) string {
 	}
 
 	cmd := common.StripBashDisplayPrefix(params.Command, p.com.Workspace.WorkingDir())
+	command, err := common.SyntaxHighlightLexerName(p.com.Styles, cmd, "bash", p.com.Styles.Dialog.ContentPanelBg)
+	if err != nil {
+		command = cmd
+	}
+	return p.renderContentPanel(command, width)
+}
+
+func (p *Permissions) renderExecuteContent(width int) string {
+	params, ok := p.permission.Params.(tools.ExecuteParams)
+	if !ok {
+		return ""
+	}
+
+	cmd := common.StripBashDisplayPrefix(params.Command, p.com.Workspace.WorkingDir())
+	command, err := common.SyntaxHighlightLexerName(p.com.Styles, cmd, "bash", p.com.Styles.Dialog.ContentPanelBg)
+	if err != nil {
+		command = cmd
+	}
+	return p.renderContentPanel(command, width)
+}
+
+func (p *Permissions) renderReadContent(width int) string {
+	params, ok := p.permission.Params.(tools.ReadPermissionsParams)
+	if !ok {
+		return ""
+	}
+
+	cmd := common.StripBashDisplayPrefix(params.FilePath, p.com.Workspace.WorkingDir())
 	command, err := common.SyntaxHighlightLexerName(p.com.Styles, cmd, "bash", p.com.Styles.Dialog.ContentPanelBg)
 	if err != nil {
 		command = cmd
