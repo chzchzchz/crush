@@ -876,6 +876,7 @@ func allToolNames() []string {
 		"job_kill",
 		"download",
 		"edit",
+		"execute",
 		"multiedit",
 		"lsp_diagnostics",
 		"lsp_references",
@@ -896,6 +897,7 @@ func allToolNames() []string {
 		"view",
 		"write",
 		"list_mcp_resources",
+		"read",
 		"read_mcp_resource",
 	}
 }
