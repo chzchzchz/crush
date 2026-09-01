@@ -235,6 +235,7 @@ func withWhitespaceNote(message string, whitespaceCorrected bool) string {
 // diagnostic hint when one is available to help the caller self-correct.
 func notFoundError(content, old string) error {
 	msg := "old_string not found in file. Make sure it matches exactly, including whitespace and line breaks"
+	slog.Warn("notFoundError", "content", fmt.Sprintf("%q", content), "old", fmt.Sprintf("%q", old))
 	if hint := diagnoseMismatch(content, old); hint != "" {
 		msg += "\n\n" + hint
 	}
