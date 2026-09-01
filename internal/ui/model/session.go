@@ -257,6 +257,66 @@ func fileList(t *styles.Styles, cwd string, filesWithChanges []SessionFile, widt
 	return lipgloss.JoinVertical(lipgloss.Left, renderedFiles...)
 }
 
+
+func formatTokens(tokens int64) string {
+        switch {
+        case tokens >= 1_000_000:
+                return fmt.Sprintf("%.1fM", float64(tokens)/1_000_000)
+        case tokens >= 1_000:
+                return fmt.Sprintf("%.1fK", float64(tokens)/1_000)
+        default:
+                return fmt.Sprintf("%d", tokens)
+        }
+}
+
+// llmStatsInfo renders the LLM statistics section for the sidebar.
+func (m *UI) llmStatsInfo(width int, isSection bool) string {
+	t := m.com.Styles
+
+	stats := []string{}
+	stats = append(stats, fmt.Sprintf("requests: %d", m.session.TotalRequests))
+	stats = append(
+		stats,
+		fmt.Sprintf(
+			"received: %d (∑%s)",
+			m.session.CompletionTokens,
+			formatTokens(m.session.TotalCompletionTokens)))
+	stats = append(
+		stats,
+		fmt.Sprintf(
+			"cached: %d (∑%s)",
+			m.session.CachedTokens,
+			formatTokens(m.session.TotalCachedTokens)))
+	stats = append(
+		stats,
+		fmt.Sprintf(
+			"uncached: %d (∑%s)",
+			m.session.PromptTokens-m.session.CachedTokens,
+			formatTokens(m.session.TotalPromptTokens - m.session.TotalCachedTokens)))
+	stats = append(
+		stats,
+		fmt.Sprintf(
+			"thinking: %d (∑%s)",
+			m.session.ReasoningTokens,
+			formatTokens(m.session.TotalReasoningTokens)))
+
+	title := t.Resource.Heading.Render("LLM Stats")
+	if isSection {
+		title = common.Section(t, title, width, stats...)
+	}
+
+	if len(stats) == 0 {
+		return lipgloss.JoinVertical(lipgloss.Left, title, t.Files.EmptyMessage.Render("No data"), "")
+	}
+
+	var lines []string
+	lines = append(lines, title)
+	for _, s := range stats {
+		lines = append(lines, s)
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
 // startLSPs starts LSP servers for the given file paths.
 func (m *UI) startLSPs(paths []string) tea.Cmd {
 	if len(paths) == 0 {

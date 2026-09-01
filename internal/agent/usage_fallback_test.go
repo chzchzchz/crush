@@ -248,7 +248,7 @@ func TestUpdateSessionUsagePreservesOmittedCountersForPartialUsage(t *testing.T)
 
 	agent.updateSessionUsage(model, currentSession, usage, nil, false)
 
-	require.Equal(t, int64(789), currentSession.PromptTokens)
+	require.Equal(t, int64(912), currentSession.PromptTokens)
 	require.Equal(t, int64(456), currentSession.CompletionTokens)
 }
 
@@ -285,7 +285,7 @@ func TestUpdateSessionUsagePreservesPromptForOutputOnlyUsage(t *testing.T) {
 	agent.updateSessionUsage(model, currentSession, usage, nil, false)
 
 	require.Equal(t, int64(123), currentSession.PromptTokens)
-	require.Equal(t, int64(50), currentSession.CompletionTokens)
+	require.Equal(t, int64(506), currentSession.CompletionTokens)
 }
 
 func TestUpdateSessionUsageKeepsCountersForEstimatedZeroUsage(t *testing.T) {

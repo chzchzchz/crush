@@ -6,11 +6,25 @@ INSERT INTO sessions (
     message_count,
     prompt_tokens,
     completion_tokens,
+    cached_tokens,
+    reasoning_tokens,
+    total_requests,
+    total_prompt_tokens,
+    total_completion_tokens,
+    total_cached_tokens,
+    total_reasoning_tokens,
     cost,
     summary_message_id,
     updated_at,
     created_at
 ) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -46,9 +60,17 @@ SET
     title = ?,
     prompt_tokens = ?,
     completion_tokens = ?,
+    cached_tokens = ?,
+    reasoning_tokens = ?,
+    total_requests = ?,
+    total_prompt_tokens = ?,
+    total_completion_tokens = ?,
+    total_cached_tokens = ?,
+    total_reasoning_tokens = ?,
     summary_message_id = ?,
     cost = ?,
-    todos = ?
+    todos = ?,
+    updated_at = strftime('%s', 'now')
 WHERE id = ?
 RETURNING *;
 
@@ -58,6 +80,13 @@ SET
     title = ?,
     prompt_tokens = prompt_tokens + ?,
     completion_tokens = completion_tokens + ?,
+    cached_tokens = cached_tokens + ?,
+    reasoning_tokens = reasoning_tokens + ?,
+    total_requests = total_requests + ?,
+    total_prompt_tokens = total_prompt_tokens + ?,
+    total_completion_tokens = total_completion_tokens + ?,
+    total_cached_tokens = total_cached_tokens + ?,
+    total_reasoning_tokens = total_reasoning_tokens + ?,
     cost = cost + ?,
     updated_at = strftime('%s', 'now')
 WHERE id = ?;

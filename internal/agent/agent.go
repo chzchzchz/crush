@@ -1870,12 +1870,18 @@ func (a *sessionAgent) GenerateTitle(ctx context.Context, sessionID string, user
 		cost = 0
 	}
 
-	promptTokens := resp.TotalUsage.InputTokens + resp.TotalUsage.CacheCreationTokens
-	completionTokens := resp.TotalUsage.OutputTokens
-
 	// Atomically update only title and usage fields to avoid overriding other
 	// concurrent session updates.
-	saveErr := a.sessions.UpdateTitleAndUsage(ctx, sessionID, title, promptTokens, completionTokens, cost)
+	saveErr := a.sessions.UpdateTitleAndUsage(ctx, sessionID, title, session.SessionUsage{
+			PromptTokens:          resp.TotalUsage.InputTokens + resp.TotalUsage.CacheCreationTokens,
+			CompletionTokens:      resp.TotalUsage.OutputTokens,
+			CachedTokens:          resp.TotalUsage.CacheReadTokens,
+			TotalRequests:         1,
+			TotalPromptTokens:     resp.TotalUsage.InputTokens + resp.TotalUsage.CacheReadTokens,
+			TotalCompletionTokens: resp.TotalUsage.OutputTokens,
+			TotalCachedTokens:     resp.TotalUsage.CacheReadTokens,
+			Cost:                  cost,
+		})
 	if saveErr != nil {
 		slog.Error("Failed to save session title and usage", "error", saveErr)
 		return
@@ -1945,6 +1951,11 @@ func (a *sessionAgent) updateSessionUsage(model Model, session *session.Session,
 	}
 
 	session.Cost += cost
+	session.TotalRequests++
+	session.TotalCompletionTokens += usage.OutputTokens
+	session.TotalPromptTokens += usage.InputTokens + usage.CacheReadTokens
+	session.TotalCachedTokens += usage.CacheReadTokens
+	session.TotalReasoningTokens += usage.ReasoningTokens
 	updateSessionTokenCounters(session, usage)
 }
 
@@ -1954,6 +1965,12 @@ func updateSessionTokenCounters(session *session.Session, usage fantasy.Usage) {
 	}
 	if promptTokens := usage.InputTokens + usage.CacheReadTokens; promptTokens != 0 {
 		session.PromptTokens = promptTokens
+	}
+	if usage.CacheReadTokens != 0 {
+		session.CachedTokens = usage.CacheReadTokens
+	}
+	if usage.ReasoningTokens != 0 {
+		session.ReasoningTokens = usage.ReasoningTokens
 	}
 }
 
