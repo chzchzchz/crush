@@ -317,7 +317,8 @@ func (m *UI) llmStatsInfo(width int, isSection bool) string {
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
-// startLSPs starts LSP servers for the given file paths.
+// startLSPs starts LSP servers for the given file paths
+// and opens each file to prevent stale content.
 func (m *UI) startLSPs(paths []string) tea.Cmd {
 	if len(paths) == 0 {
 		return nil
@@ -327,6 +328,7 @@ func (m *UI) startLSPs(paths []string) tea.Cmd {
 		ctx := context.Background()
 		for _, path := range paths {
 			m.com.Workspace.LSPStart(ctx, path)
+			m.com.Workspace.LSPOpenFile(ctx, path)
 		}
 		return nil
 	}

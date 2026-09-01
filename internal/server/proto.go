@@ -723,6 +723,36 @@ func (c *controllerV1) handlePostWorkspaceLSPStart(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+// handlePostWorkspaceLSPOpenFile starts an LSP server and opens a file,
+// preventing stale content when the file was already open.
+//
+//	@Summary		Open LSP file
+//	@Tags			lsp
+//	@Accept			json
+//	@Param			id		path	string					true	"Workspace ID"
+//	@Param			request	body	proto.LSPOpenFileRequest	true	"LSP open file request"
+//	@Success		200
+//	@Failure		400	{object}	proto.Error
+//	@Failure		404	{object}	proto.Error
+//	@Failure		500	{object}	proto.Error
+//	@Router			/workspaces/{id}/lsps/openfile [post]
+func (c *controllerV1) handlePostWorkspaceLSPOpenFile(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req proto.LSPOpenFileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		c.server.logError(r, "Failed to decode request", "error", err)
+		jsonError(w, http.StatusBadRequest, "failed to decode request")
+		return
+	}
+
+	if err := c.backend.LSPOpenFile(r.Context(), id, req.Path); err != nil {
+		c.handleError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // handlePostWorkspaceLSPStopAll stops all LSP servers.
 //
 //	@Summary		Stop all LSP servers

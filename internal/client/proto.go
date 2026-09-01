@@ -966,6 +966,21 @@ func (c *Client) LSPStart(ctx context.Context, id string, path string) error {
 	return nil
 }
 
+// LSPOpenFile starts an LSP server and opens a file in it.
+func (c *Client) LSPOpenFile(ctx context.Context, id string, path string) error {
+	rsp, err := c.post(ctx, fmt.Sprintf("/workspaces/%s/lsps/openfile", id), nil, jsonBody(struct {
+		Path string `json:"path"`
+	}{Path: path}), http.Header{"Content-Type": []string{"application/json"}})
+	if err != nil {
+		return fmt.Errorf("failed to open LSP file: %w", err)
+	}
+	defer rsp.Body.Close()
+	if rsp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to open LSP file: status code %d", rsp.StatusCode)
+	}
+	return nil
+}
+
 // LSPStopAll stops all LSP servers for a workspace.
 func (c *Client) LSPStopAll(ctx context.Context, id string) error {
 	rsp, err := c.post(ctx, fmt.Sprintf("/workspaces/%s/lsps/stop", id), nil, nil, nil)

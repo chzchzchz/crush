@@ -107,6 +107,11 @@ type AgentInitRequest struct {
 	Interactive bool `json:"interactive"`
 }
 
+// LSPOpenFileRequest represents a request to open a file in an LSP server.
+type LSPOpenFileRequest struct {
+	Path string `json:"path"`
+}
+
 // LSPStartRequest represents a request to start an LSP for a path.
 type LSPStartRequest struct {
 	Path string `json:"path"`

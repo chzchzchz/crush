@@ -192,6 +192,7 @@ type Workspace interface {
 
 	// LSP
 	LSPStart(ctx context.Context, path string)
+	LSPOpenFile(ctx context.Context, path string)
 	LSPStopAll(ctx context.Context)
 	LSPGetStates() map[string]LSPClientInfo
 	LSPGetDiagnosticCounts(name string) lsp.DiagnosticCounts

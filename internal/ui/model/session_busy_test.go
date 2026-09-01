@@ -108,6 +108,8 @@ func (w *countingWorkspace) WorkingDir() string { return "" }
 
 func (w *countingWorkspace) LSPStart(context.Context, string) {}
 
+func (w *countingWorkspace) LSPOpenFile(context.Context, string) {}
+
 func (w *countingWorkspace) Config() *config.Config { return nil }
 
 // syncProbes sums every synchronous counter; Update/View must keep this at

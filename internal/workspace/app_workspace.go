@@ -300,6 +300,16 @@ func (w *AppWorkspace) LSPStart(ctx context.Context, path string) {
 	w.app.LSPManager.Start(ctx, path)
 }
 
+func (w *AppWorkspace) LSPOpenFile(ctx context.Context, path string) {
+	w.app.LSPManager.Start(ctx, path)
+	for client := range w.app.LSPManager.Clients().Seq() {
+		if !client.HandlesFile(path) {
+			continue
+		}
+		_ = client.OpenFileOnDemand(ctx, path)
+	}
+}
+
 func (w *AppWorkspace) LSPStopAll(ctx context.Context) {
 	w.app.LSPManager.StopAll(ctx)
 }

@@ -82,6 +82,24 @@ func (b *Backend) LSPStart(ctx context.Context, workspaceID, path string) error 
 	return nil
 }
 
+// LSPOpenFile starts an LSP server and opens a file in it,
+// preventing stale content when the file was already open.
+func (b *Backend) LSPOpenFile(ctx context.Context, workspaceID, path string) error {
+	ws, err := b.GetWorkspace(workspaceID)
+	if err != nil {
+		return err
+	}
+
+	ws.LSPManager.Start(ctx, path)
+	for client := range ws.LSPManager.Clients().Seq() {
+		if !client.HandlesFile(path) {
+			continue
+		}
+		_ = client.OpenFileOnDemand(ctx, path)
+	}
+	return nil
+}
+
 // LSPStopAll stops all LSP servers for a workspace.
 func (b *Backend) LSPStopAll(ctx context.Context, workspaceID string) error {
 	ws, err := b.GetWorkspace(workspaceID)

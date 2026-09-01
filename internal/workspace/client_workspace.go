@@ -469,6 +469,10 @@ func (w *ClientWorkspace) LSPStart(ctx context.Context, path string) {
 	_ = w.client.LSPStart(ctx, w.workspaceID(), path)
 }
 
+func (w *ClientWorkspace) LSPOpenFile(ctx context.Context, path string) {
+	_ = w.client.LSPOpenFile(ctx, w.workspaceID(), path)
+}
+
 func (w *ClientWorkspace) LSPStopAll(ctx context.Context) {
 	_ = w.client.LSPStopAll(ctx, w.workspaceID())
 }
