@@ -82,13 +82,17 @@ func updateLSPState(name string, state lsp.ServerState, err error, client *lsp.C
 	})
 }
 
-// updateLSPDiagnostics updates the diagnostic count for an LSP client and publishes an event
+// updateLSPDiagnostics updates the diagnostic count for an LSP client and publishes an event.
 func updateLSPDiagnostics(name string, diagnosticCount int) {
-	if info, exists := lspStates.Get(name); exists {
+	// Compute applies the update atomically under the map's write lock,
+	// preventing a concurrent updateLSPState from overwriting DiagnosticCount.
+	lspStates.Compute(name, func(info LSPClientInfo) LSPClientInfo {
 		info.DiagnosticCount = diagnosticCount
-		lspStates.Set(name, info)
+		return info
+	})
 
-		// Publish diagnostics change event
+	// Publish diagnostics change event using the updated state.
+	if info, _ := lspStates.Get(name); info.Name != "" {
 		lspBroker.Publish(pubsub.UpdatedEvent, LSPEvent{
 			Type:            LSPEventDiagnosticsChanged,
 			Name:            name,

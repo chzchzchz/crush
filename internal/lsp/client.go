@@ -407,7 +407,8 @@ func (c *Client) OpenFile(ctx context.Context, filepath string) error {
 	uri := string(protocol.URIFromPath(filepath))
 
 	if _, exists := c.openFiles.Get(uri); exists {
-		return nil // Already open
+		// File is already open — refresh its content to avoid stale data.
+		return c.refreshOpenFile(ctx, uri, filepath)
 	}
 
 	// Skip files that do not exist or cannot be read
@@ -426,6 +427,30 @@ func (c *Client) OpenFile(ctx context.Context, filepath string) error {
 		URI:     protocol.DocumentURI(uri),
 	})
 
+	return nil
+}
+
+// refreshOpenFile re-notifies the LSP server about an already-open file
+// with its current content, preventing stale data when the file was
+// opened before external changes occurred.
+func (c *Client) refreshOpenFile(ctx context.Context, uri string, filepath string) error {
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+	fileInfo, _ := c.openFiles.Get(uri)
+	fileInfo.Version++
+	changes := []protocol.TextDocumentContentChangeEvent{
+		{
+			Value: protocol.TextDocumentContentChangeWholeDocument{
+				Text: string(content),
+			},
+		},
+	}
+	if err := c.client.NotifyDidChangeTextDocument(ctx, uri, int(fileInfo.Version), changes); err != nil {
+		return err
+	}
+	c.openFiles.Set(uri, fileInfo)
 	return nil
 }
 
@@ -533,17 +558,18 @@ func (c *Client) GetDiagnosticCounts() DiagnosticCounts {
 	return counts
 }
 
-// OpenFileOnDemand opens a file only if it's not already open.
+// OpenFileOnDemand opens a file in the LSP server, refreshing its
+// content if it is already open to avoid stale data.
 func (c *Client) OpenFileOnDemand(ctx context.Context, filepath string) error {
 	if c == nil {
 		return nil
 	}
-	// Check if the file is already open
+	uri := string(protocol.URIFromPath(filepath))
+
 	if c.IsFileOpen(filepath) {
-		return nil
+		return c.refreshOpenFile(ctx, uri, filepath)
 	}
 
-	// Open the file
 	return c.OpenFile(ctx, filepath)
 }
 

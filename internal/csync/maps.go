@@ -106,6 +106,14 @@ func (m *Map[K, V]) GetOrSet(key K, fn func() V) V {
 	return value
 }
 
+// Compute applies fn to the current value for key atomically under
+// the map's write lock, replacing the stored value with the result.
+func (m *Map[K, V]) Compute(key K, fn func(V) V) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.inner[key] = fn(m.inner[key])
+}
+
 // Take gets an item and then deletes it.
 func (m *Map[K, V]) Take(key K) (V, bool) {
 	m.mu.Lock()

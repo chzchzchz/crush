@@ -54,7 +54,9 @@ func openInLSPs(
 		if !client.HandlesFile(filepath) {
 			continue
 		}
-		_ = client.OpenFileOnDemand(ctx, filepath)
+		if err := client.OpenFileOnDemand(ctx, filepath); err != nil {
+			slog.WarnContext(ctx, "Failed to open file on demand", "file", filepath, "error", err)
+		}
 	}
 }
 
@@ -118,8 +120,12 @@ func notifyLSPs(
 		if !client.HandlesFile(filepath) {
 			continue
 		}
-		_ = client.OpenFileOnDemand(ctx, filepath)
-		_ = client.NotifyChange(ctx, filepath)
+		if err := client.OpenFileOnDemand(ctx, filepath); err != nil {
+			slog.WarnContext(ctx, "Failed to open file on demand", "file", filepath, "error", err)
+		}
+		if err := client.NotifyChange(ctx, filepath); err != nil {
+			slog.WarnContext(ctx, "Failed to notify file change", "file", filepath, "error", err)
+		}
 		wg.Go(func() {
 			client.WaitForDiagnostics(ctx, 5*time.Second)
 		})
