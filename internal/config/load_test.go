@@ -2534,3 +2534,37 @@ func TestConfig_LoadFromBytes_EnvMerge(t *testing.T) {
 	require.Equal(t, "second", loadedConfig.Env["AWS_PROFILE"])
 	require.Equal(t, "us-east-1", loadedConfig.Env["AWS_REGION"])
 }
+
+func TestConfig_RateLimitJSON(t *testing.T) {
+	t.Run("rate_limit unmarshals from JSON", func(t *testing.T) {
+		data := []byte(`{"models":{"large":{"model":"gpt-4o","provider":"openai","rate_limit":{"rate":5,"burst":10}}}}`)
+		loadedConfig, err := loadFromBytes([][]byte{data})
+		require.NoError(t, err)
+		require.NotNil(t, loadedConfig.Models)
+		large, ok := loadedConfig.Models[SelectedModelTypeLarge]
+		require.True(t, ok)
+		require.NotNil(t, large.RateLimit)
+		require.Equal(t, 5, large.RateLimit.Rate)
+		require.Equal(t, 10, large.RateLimit.Burst)
+	})
+
+	t.Run("missing rate_limit is nil", func(t *testing.T) {
+		data := []byte(`{"models":{"large":{"model":"gpt-4o","provider":"openai"}}}`)
+		loadedConfig, err := loadFromBytes([][]byte{data})
+		require.NoError(t, err)
+		large, ok := loadedConfig.Models[SelectedModelTypeLarge]
+		require.True(t, ok)
+		require.Nil(t, large.RateLimit)
+	})
+
+	t.Run("rate_limit_zero_values", func(t *testing.T) {
+		data := []byte(`{"models":{"large":{"model":"gpt-4o","provider":"openai","rate_limit":{"rate":0,"burst":0}}}}`)
+		loadedConfig, err := loadFromBytes([][]byte{data})
+		require.NoError(t, err)
+		large, ok := loadedConfig.Models[SelectedModelTypeLarge]
+		require.True(t, ok)
+		require.NotNil(t, large.RateLimit)
+		require.Equal(t, 0, large.RateLimit.Rate)
+		require.Equal(t, 0, large.RateLimit.Burst)
+	})
+}

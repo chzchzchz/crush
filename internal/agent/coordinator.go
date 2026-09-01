@@ -38,6 +38,7 @@ import (
 	"github.com/charmbracelet/crush/internal/permission"
 	"github.com/charmbracelet/crush/internal/pubsub"
 	"github.com/charmbracelet/crush/internal/question"
+	"github.com/charmbracelet/crush/internal/ratelimit"
 	"github.com/charmbracelet/crush/internal/session"
 	"github.com/charmbracelet/crush/internal/skills"
 	"golang.org/x/sync/errgroup"
@@ -879,16 +880,28 @@ func (c *coordinator) buildAgentModels(ctx context.Context, isSubAgent bool) (Mo
 		return Model{}, Model{}, err
 	}
 
+	largeRate, largeBurst := 0, 0
+	if largeModelCfg.RateLimit != nil {
+		largeRate = largeModelCfg.RateLimit.Rate
+		largeBurst = largeModelCfg.RateLimit.Burst
+	}
+	smallRate, smallBurst := 0, 0
+	if smallModelCfg.RateLimit != nil {
+		smallRate = smallModelCfg.RateLimit.Rate
+		smallBurst = smallModelCfg.RateLimit.Burst
+	}
 	return Model{
 			Model:      largeModel,
 			CatwalkCfg: *largeCatwalkModel,
 			ModelCfg:   largeModelCfg,
 			FlatRate:   largeProviderCfg.FlatRate,
+			Limiter:    ratelimit.New(largeRate, largeBurst),
 		}, Model{
 			Model:      smallModel,
 			CatwalkCfg: *smallCatwalkModel,
 			ModelCfg:   smallModelCfg,
 			FlatRate:   smallProviderCfg.FlatRate,
+			Limiter:    ratelimit.New(smallRate, smallBurst),
 		}, nil
 }
 

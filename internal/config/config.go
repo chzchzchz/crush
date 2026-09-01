@@ -61,6 +61,11 @@ const (
 	AgentTask  string = "task"
 )
 
+type RateLimit struct {
+	Rate  int `json:"rate,omitempty" jsonschema:"description=Maximum requests per second,minimum=0,example=5"`
+	Burst int `json:"burst,omitempty" jsonschema:"description=Maximum burst of requests at once,minimum=0,example=10"`
+}
+
 type SelectedModel struct {
 	// The model id as used by the provider API.
 	// Required.
@@ -82,6 +87,9 @@ type SelectedModel struct {
 	TopK             *int64   `json:"top_k,omitempty" jsonschema:"description=Top-k sampling parameter"`
 	FrequencyPenalty *float64 `json:"frequency_penalty,omitempty" jsonschema:"description=Frequency penalty to reduce repetition"`
 	PresencePenalty  *float64 `json:"presence_penalty,omitempty" jsonschema:"description=Presence penalty to increase topic diversity"`
+
+	// Rate limiting configuration.
+	RateLimit *RateLimit `json:"rate_limit,omitempty" jsonschema:"description=Rate limiting configuration for this model"`
 
 	// Override provider specific options.
 	ProviderOptions map[string]any `json:"provider_options,omitempty" jsonschema:"description=Additional provider-specific options for the model"`
